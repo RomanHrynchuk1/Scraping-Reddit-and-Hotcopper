@@ -2,9 +2,14 @@
 .venv/
 __pycache__/
 chrome-win32/
+logs/
+dist/
+build/
 
 chromedriver-32.exe
 
+.env
 input.csv
-app.log
 test.ipynb
+main.spec
+

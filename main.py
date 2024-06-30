@@ -2,14 +2,20 @@
 main.py
 """
 
+import os
 import re
 import time
 import random
 import logging
 import traceback
 
+from datetime import datetime
+
 import pandas as pd
+from dotenv import load_dotenv
 from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.service import Service
 from bs4 import BeautifulSoup
 
@@ -21,13 +27,19 @@ from database import (
     insert_into_comments,
 )
 
+load_dotenv()
+
 CSV_FILE_PATH = "input.csv"
 REDDIT_URL = "https://www.reddit.com/r/ausstocks/new/"
 HOTCOPPER_URL = "https://hotcopper.com.au/postview/"
 
+# For Reddit
+USERNAME = os.getenv("REDDIT_USER_NAME")
+PASSWORD = os.getenv("REDDIT_PASS_WORD")
+
 # Setup logging
 logging.basicConfig(
-    filename="app.log",
+    filename=f"logs/app-{datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}.log",
     filemode="w",
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
@@ -114,7 +126,7 @@ def get_data_reddit(driver, href, stknames):
             try:
                 id = "t3_" + comment_id + "-read-more-button"
                 driver.find_element_by_id(id).click()
-            except:
+            finally:
                 pass
 
             page_source = driver.page_source
@@ -185,6 +197,15 @@ def get_data_reddit(driver, href, stknames):
 def reddit(driver, stknames, saved_urls) -> bool:
     "Perform reddit scraping."
     try:
+        # startIF the driver can't access to reddit.com,
+        driver.get("https://www.reddit.com/login/")
+        time.sleep(2)
+        driver.find_element(By.ID, "login-username").send_keys(USERNAME)
+        time.sleep(2)
+        driver.find_element(By.ID, "login-password").send_keys(PASSWORD)
+        time.sleep(10)
+        driver.find_element(By.ID, "login-password").send_keys(Keys.ENTER)
+        time.sleep(10)
         driver.get(REDDIT_URL)
         time.sleep(5)
 
