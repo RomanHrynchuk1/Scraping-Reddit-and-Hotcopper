@@ -6,3 +6,5 @@ chrome-win32/
 chromedriver-32.exe
 
 input.csv
+app.log
+test.ipynb

@@ -22,7 +22,7 @@ from sqlalchemy.sql import func
 load_dotenv()
 
 # Create database engine
-engine = create_engine(os.getenv("DATABASE_URL"), connect_args={"timeout": 40})
+engine = create_engine(os.getenv("DATABASE_URL"))
 metadata = MetaData()
 
 # Define tables
@@ -30,20 +30,20 @@ StockTable = Table(
     "stock",
     metadata,
     Column("id", Integer, primary_key=True),
-    Column("stk", String),
+    Column("stk", String(10)),  # Specify length for String columns
 )
 
 PostsTable = Table(
     "posts",
     metadata,
     Column("id", Integer, primary_key=True),
-    Column("type", String),  # Reddit or Hotcopper.
-    Column("url", String),
-    Column("post_id", String),
-    Column("title", String),
+    Column("type", String(10)),  # Specify length for String columns
+    Column("url", String(255)),  # Specify length for String columns
+    Column("post_id", String(20)),  # Specify length for String columns
+    Column("title", String(50)),  # Specify length for String columns
     Column("description", Text),
     Column("stockid", Integer),
-    Column("stockname", String),
+    Column("stockname", String(10)),  # Specify length for String columns
     Column("timestamp", DateTime, server_default=func.now()),
 )
 
@@ -52,10 +52,10 @@ CommentsTable = Table(
     metadata,
     Column("id", Integer, primary_key=True),
     Column("text", Text),
-    Column("author", String),
-    Column("postid", String),
+    Column("author", String(20)),  # Specify length for String columns
+    Column("postid", Integer),  # Specify length for String columns
     Column("stockid", Integer),
-    Column("stockname", String),
+    Column("stockname", String(8)),  # Specify length for String columns
 )
 
 # Create tables in the database
@@ -63,6 +63,7 @@ metadata.create_all(engine)
 
 # Create a configured "Session" class
 Session = sessionmaker(bind=engine)
+
 
 # Functions
 def get_stock_values() -> list[dict]:
@@ -79,12 +80,13 @@ def get_stock_values() -> list[dict]:
         session.close()
     return stock_values
 
-def set_stock_values(stocks: list[str]) -> bool:
+
+def insert_stock_values(stocks: list[str]) -> bool:
     """Insert a list of stock values into the database."""
     session = Session()
     try:
         for stock in stocks:
-            session.add(StockTable.insert().values(stk=stock))
+            session.execute(StockTable.insert().values(stk=stock))
         session.commit()
         return True
     except Exception as e:
@@ -94,10 +96,26 @@ def set_stock_values(stocks: list[str]) -> bool:
     finally:
         session.close()
 
-def insert_into_posts(type: str, url: str, post_id: str, title: str, description: str, stockid: int, stockname: str) -> int:
+
+def insert_into_posts(
+    type: str,
+    url: str,
+    post_id: str,
+    title: str,
+    description: str,
+    stockid: int,
+    stockname: str,
+) -> int:
     """Insert a post into the posts table and return the id of the inserted post."""
     session = Session()
     try:
+        # Truncate strings to fit the column definitions
+        type = type[:10]
+        url = url[:255]
+        post_id = post_id[:20]
+        title = title[:50]
+        stockname = stockname[:10]
+
         result = session.execute(
             PostsTable.insert().values(
                 type=type,
@@ -106,7 +124,7 @@ def insert_into_posts(type: str, url: str, post_id: str, title: str, description
                 title=title,
                 description=description,
                 stockid=stockid,
-                stockname=stockname
+                stockname=stockname,
             )
         )
         session.commit()
@@ -119,17 +137,38 @@ def insert_into_posts(type: str, url: str, post_id: str, title: str, description
     finally:
         session.close()
 
-def insert_into_comments(text: str, author: str, postid: str, stockid: int, stockname: str) -> int:
+
+def get_posts_url() -> list[str]:
+    """Fetch all URLs from the posts table and return them as a list of strings."""
+    session = Session()
+    urls = []
+    try:
+        # Use query().values() to fetch only the 'url' column
+        urls = [url for (url,) in session.query(PostsTable.c.url)]
+    except Exception as e:
+        print(f"Error fetching posts URLs: {e}")
+    finally:
+        session.close()
+    return urls
+
+
+def insert_into_comments(
+    text: str, author: str, postid: int, stockid: int, stockname: str
+) -> int:
     """Insert a comment into the comments table and return the id of the inserted comment."""
     session = Session()
     try:
+        # Truncate strings to fit the column definitions
+        author = author[:20]
+        stockname = stockname[:8]
+
         result = session.execute(
             CommentsTable.insert().values(
                 text=text,
                 author=author,
                 postid=postid,
                 stockid=stockid,
-                stockname=stockname
+                stockname=stockname,
             )
         )
         session.commit()
