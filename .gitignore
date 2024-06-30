@@ -1,0 +1,8 @@
+.data/
+.venv/
+__pycache__/
+chrome-win32/
+
+chromedriver-32.exe
+
+input.csv
