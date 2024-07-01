@@ -125,7 +125,7 @@ def get_data_reddit(driver, href, stknames):
 
             try:
                 id = "t3_" + comment_id + "-read-more-button"
-                driver.find_element_by_id(id).click()
+                driver.find_element(By.ID, id).click()
             finally:
                 pass
 
@@ -201,9 +201,9 @@ def reddit(driver, stknames, saved_urls) -> bool:
         driver.get("https://www.reddit.com/login/")
         time.sleep(2)
         driver.find_element(By.ID, "login-username").send_keys(USERNAME)
-        time.sleep(2)
+        time.sleep(5)
         driver.find_element(By.ID, "login-password").send_keys(PASSWORD)
-        time.sleep(10)
+        time.sleep(20)
         driver.find_element(By.ID, "login-password").send_keys(Keys.ENTER)
         time.sleep(10)
         driver.get(REDDIT_URL)
